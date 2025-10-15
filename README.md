@@ -7,7 +7,7 @@ It simulates a real online food ordering experience with product browsing, categ
 
 The project focuses on frontend development and uses localStorage to manage and persist cart data.
 
-Features
+*Features
 
 Home Page: Displays all food items with search and category filters.
 
@@ -25,11 +25,11 @@ Clean Interface: Lightweight animations and user-friendly layout.
 
 How to Create and Run the App
 
-Copy the Code:
+*Copy the Code:
 
 Use the provided HTML, CSS, and JavaScript code from the project.
 
-Create a File:
+*Create a File:
 
 Open your code editor (for example, VS Code).
 
@@ -78,3 +78,10 @@ All cart data is stored locally under the key food_cart.
 The project is meant for learning and demo purposes.
 
 It can easily be extended to a full-stack web application with backend APIs.
+👤 Author
+
+Name: Harish Muhammad
+
+*GitHub username:harishmuhammad21
+
+This is the output URL for the website:file:///C:/Users/Harish%20Muhammad/Desktop/potfolio/index.html

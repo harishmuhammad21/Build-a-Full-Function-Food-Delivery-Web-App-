@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Food Shop — Demo</title>
+  <style>
+    :root{
+      --bg:#f7f7f8;--card:#ffffff;--accent:#ef6c00;--muted:#6b6b6b;--glass: rgba(255,255,255,0.6);
+      --radius:12px; --maxw:1100px;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#fbfbfc,var(--bg));color:#222;display:flex;justify-content:center;padding:28px}
+    .app{width:100%;max-width:var(--maxw)}
+
+    /* header */
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#ffb74d);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:18px;margin:0}
+    .controls{display:flex;gap:12px;align-items:center}
+    .search{padding:8px 12px;border-radius:10px;border:1px solid #eee;background:white;min-width:240px}
+    button.icon{background:var(--card);border:1px solid #eee;padding:10px;border-radius:10px;cursor:pointer}
+
+    /* layout */
+    .grid{display:grid;grid-template-columns:260px 1fr 360px;gap:18px}
+    @media (max-width:1000px){.grid{grid-template-columns:1fr;}}
+
+    /* categories */
+    .categories{background:var(--card);padding:14px;border-radius:14px;border:1px solid #eee}
+    .cat{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer}
+    .cat:hover{background:#f5f5f7}
+    .cat.active{background:linear-gradient(90deg,rgba(239,108,0,0.08),rgba(255,183,77,0.04));border:1px solid rgba(239,108,0,0.08)}
+
+    /* product list */
+    .content{display:flex;flex-direction:column;gap:12px}
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .card{background:var(--card);padding:12px;border-radius:12px;border:1px solid #eee;display:flex;flex-direction:column;gap:8px}
+    .prod-img{height:120px;border-radius:10px;object-fit:cover;width:100%;background:#fafafa}
+    .prod-title{font-weight:600}
+    .meta{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px}
+    .btn{padding:8px 10px;border-radius:10px;border:0;background:var(--accent);color:white;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(239,108,0,0.12)}
+
+    /* cart */
+    .cart{background:var(--card);padding:14px;border-radius:14px;border:1px solid #eee;position:sticky;top:28px;height:fit-content}
+    .cart h3{margin:0 0 8px 0}
+    .cart-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;padding-right:6px}
+    .cart-item{display:flex;gap:10px;align-items:center}
+    .qty{display:flex;gap:6px;align-items:center}
+    .smallbtn{padding:6px;border-radius:8px;border:1px solid #eee;background:transparent;cursor:pointer}
+    .total{display:flex;justify-content:space-between;font-weight:700;margin-top:10px}
+
+    /* modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal{background:var(--card);width:100%;max-width:700px;border-radius:14px;padding:18px;border:1px solid #eee}
+    .modal.show{transform:translateY(0)}
+
+    /* checkout / forms */
+    .checkout{display:flex;flex-direction:column;gap:10px}
+    input[type=text],input[type=email],input[type=tel]{padding:10px;border-radius:8px;border:1px solid #e6e6e6}
+    .muted{color:var(--muted);font-size:13px}
+
+    /* tiny animations */
+    .fade-in{animation:fade .18s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">F</div>
+        <div>
+          <h1>Food Shop — Demo</h1>
+          <div class="muted">Static front-end with cart + localStorage</div>
+        </div>
+      </div>
+      <div class="controls">
+        <input class="search" id="search" placeholder="Search dishes, e.g. biryani" />
+        <button class="icon" id="view-cart">Cart (<span id="cart-count">0</span>)</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <aside class="categories" id="category-list">
+        <div class="cat active" data-cat="all">All</div>
+      </aside>
+
+      <section class="content">
+        <div class="products" id="products"></div>
+      </section>
+
+      <aside class="cart" id="cart">
+        <h3>Your Cart</h3>
+        <div class="cart-list" id="cart-list"></div>
+        <div class="total"><span>Subtotal</span><span id="cart-sub">₹0</span></div>
+        <button class="btn" id="checkout">Checkout</button>
+        <div style="height:6px"></div>
+        <button class="btn ghost" id="empty">Empty cart</button>
+      </aside>
+    </main>
+
+    <div class="modal-backdrop" id="modal">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <footer>Tip: open this file in browser. LocalStorage key: <code>food_cart</code></footer>
+  </div>
+
+  <script>
+    /******************* Sample product data *******************/
+    const PRODUCTS = [
+      {id: 'p1', title: 'Butter Chicken Biryani', price: 249, category: 'Biryani', img: 'https://images.unsplash.com/photo-1604908177522-3c55b5b2d0d6?auto=format&fit=crop&w=800&q=60', desc: 'Aromatic basmati, succulent chicken, rich gravy.'},
+      {id: 'p2', title: 'Paneer Tikka', price: 199, category: 'Starters', img: 'https://images.unsplash.com/photo-1604908177442-3e41b0d1a1f6?auto=format&fit=crop&w=800&q=60', desc: 'Smoky marinated paneer grills.'},
+      {id: 'p3', title: 'Masala Dosa', price: 119, category: 'South', img: 'https://images.unsplash.com/photo-1604908177317-2e5d9f6ef9e6?auto=format&fit=crop&w=800&q=60', desc: 'Crispy dosa with spicy potato filling.'},
+      {id: 'p4', title: 'Veg Thali', price: 179, category: 'Meals', img: 'https://images.unsplash.com/photo-1608751039364-69ac6d0c2f55?auto=format&fit=crop&w=800&q=60', desc: 'Balanced meal with dal, sabzi, rice and roti.'},
+      {id: 'p5', title: 'Chicken 65', price: 229, category: 'Starters', img: 'https://images.unsplash.com/photo-1604908177210-4f1f5f7d9cde?auto=format&fit=crop&w=800&q=60', desc: 'Crispy spicy chicken bites.'},
+      {id: 'p6', title: 'Hyderabadi Biryani (Veg)', price: 199, category: 'Biryani', img: 'https://images.unsplash.com/photo-1562967914-608c6a0a8a9b?auto=format&fit=crop&w=800&q=60', desc: 'Layered veg biryani with saffron.'}
+    ];
+
+    /******************* Utilities *******************/
+    const $ = (sel, ctx=document) => ctx.querySelector(sel);
+    const $all = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+    /* CART: stored as {id:qty,...} */
+    const STORAGE_KEY = 'food_cart';
+    function loadCart(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||{}}catch(e){return {}}}
+    function saveCart(cart){localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));}
+    let cart = loadCart();
+
+    /******************* Render categories *******************/
+    function renderCategories(){
+      const cats = ['All', ...new Set(PRODUCTS.map(p=>p.category))];
+      const container = $('#category-list'); container.innerHTML='';
+      cats.forEach(c=>{
+        const d = document.createElement('div'); d.className='cat' + (c==='All'?' active':''); d.dataset.cat=c; d.textContent=c;
+        d.addEventListener('click',()=>{ $all('.cat',container).forEach(x=>x.classList.remove('active')); d.classList.add('active'); renderProducts(); });
+        container.appendChild(d);
+      })
+    }
+
+    /******************* Render products *******************/
+    function renderProducts(){
+      const q = $('#search').value.trim().toLowerCase();
+      const active = $('.cat.active')?.dataset.cat || 'All';
+      const container = $('#products'); container.innerHTML='';
+      let list = PRODUCTS.filter(p=>{
+        if(active!== 'All' && p.category !== active) return false;
+        if(q && !(p.title.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q))) return false;
+        return true;
+      });
+
+      if(list.length===0){container.innerHTML='<div class="muted">No items match your search/category.</div>';return}
+
+      list.forEach(p=>{
+        const el = document.createElement('article'); el.className='card fade-in';
+        el.innerHTML = `
+          <img alt="${p.title}" src="${p.img}" class="prod-img"/>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="prod-title">${p.title}</div>
+              <div class="muted" style="font-size:13px">${p.category}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700">₹${p.price}</div>
+              <div class="muted" style="font-size:12px">incl. taxes</div>
+            </div>
+          </div>
+          <div class="meta">
+            <button class="btn" data-action="add" data-id="${p.id}">Add</button>
+            <button class="btn ghost" data-action="view" data-id="${p.id}">View</button>
+          </div>
+        `;
+        container.appendChild(el);
+      })
+    }
+
+    /******************* Product Modal *******************/
+    function showProduct(id){
+      const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+      const modal = $('#modal'); const body = $('#modal-body');
+      body.innerHTML = `
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <img src="${p.img}" alt="${p.title}" style="width:220px;height:160px;border-radius:10px;object-fit:cover"/>
+          <div style="flex:1">
+            <h2 style="margin-top:0">${p.title}</h2>
+            <div class="muted">${p.category} • ₹${p.price}</div>
+            <p style="margin-top:12px">${p.desc}</p>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn" id="modal-add">Add to cart</button>
+              <button class="btn ghost" id="modal-close">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.style.display='flex';
+      $('#modal-close')?.addEventListener('click',()=>modal.style.display='none');
+      $('#modal-add')?.addEventListener('click',()=>{ addToCart(id,1); modal.style.display='none' });
+    }
+
+    /******************* Cart operations *******************/
+    function cartCount(){
+      return Object.values(cart).reduce((s,v)=>s+v,0);
+    }
+    function cartSubtotal(){
+      return Object.entries(cart).reduce((sum,[id,qty])=>{
+        const p = PRODUCTS.find(x=>x.id===id); return sum + (p? p.price * qty : 0);
+      },0);
+    }
+
+    function renderCart(){
+      const list = $('#cart-list'); list.innerHTML='';
+      if(Object.keys(cart).length===0){ list.innerHTML='<div class="muted">Cart is empty — add something tasty!</div>'; }
+
+      for(const [id,qty] of Object.entries(cart)){
+        const p = PRODUCTS.find(x=>x.id===id); if(!p) continue;
+        const el = document.createElement('div'); el.className='cart-item';
+        el.innerHTML = `
+          <div style="flex:1">
+            <div style="font-weight:600">${p.title}</div>
+            <div class="muted" style="font-size:13px">₹${p.price} × ${qty} = ₹${p.price*qty}</div>
+          </div>
+          <div class="qty">
+            <button class="smallbtn" data-action="decr" data-id="${id}">-</button>
+            <div style="min-width:22px;text-align:center">${qty}</div>
+            <button class="smallbtn" data-action="incr" data-id="${id}">+</button>
+            <button class="smallbtn" data-action="remove" data-id="${id}">✕</button>
+          </div>
+        `;
+        list.appendChild(el);
+      }
+      $('#cart-sub').textContent = '₹' + cartSubtotal();
+      $('#cart-count').textContent = cartCount();
+    }
+
+    function addToCart(id, amount=1){ cart[id] = (cart[id]||0) + amount; saveCart(cart); renderCart(); }
+    function removeFromCart(id){ delete cart[id]; saveCart(cart); renderCart(); }
+    function changeQty(id, delta){ if(!cart[id]) return; cart[id] = cart[id] + delta; if(cart[id] <= 0) delete cart[id]; saveCart(cart); renderCart(); }
+    function emptyCart(){ cart = {}; saveCart(cart); renderCart(); }
+
+    /******************* Events delegation for dynamic content *******************/n
+    document.addEventListener('click', (e)=>{
+      const target = e.target;
+      // product actions
+      if(target.dataset && target.dataset.action){
+        const act = target.dataset.action, id = target.dataset.id;
+        if(act==='add'){ addToCart(id,1); }
+        if(act==='view'){ showProduct(id); }
+        if(act==='incr'){ changeQty(id, +1); }
+        if(act==='decr'){ changeQty(id, -1); }
+        if(act==='remove'){ removeFromCart(id); }
+      }
+    })
+
+    // cart view button
+    $('#view-cart').addEventListener('click', ()=>{ window.scrollTo({top:0,behavior:'smooth'}); $('#cart').style.boxShadow='0 6px 22px rgba(0,0,0,0.06)'; setTimeout(()=>$('#cart').style.boxShadow='',900); });
+
+    // empty cart
+    $('#empty').addEventListener('click', ()=>{ if(confirm('Empty the cart?')) emptyCart(); })
+
+    // search
+    $('#search').addEventListener('input', ()=>renderProducts());
+
+    // checkout flow (simple client-side mock)
+    $('#checkout').addEventListener('click', ()=>{
+      if(cartCount()===0){ alert('Your cart is empty. Add items first.'); return; }
+      showCheckout();
+    })
+
+    function showCheckout(){
+      const modal = $('#modal'); const body = $('#modal-body');
+      body.innerHTML = `
+        <h2>Checkout</h2>
+        <div class="checkout">
+          <label>Full name<input id="c-name" type="text" placeholder="Name" required></label>
+          <label>Phone<input id="c-phone" type="tel" placeholder="10-digit mobile" required></label>
+          <label>Email (optional)<input id="c-email" type="email" placeholder="you@example.com"></label>
+          <div class="muted">Order total: <strong>₹${cartSubtotal()}</strong></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="place-order">Place order</button>
+            <button class="btn ghost" id="cancel-order">Cancel</button>
+          </div>
+        </div>
+      `;
+      modal.style.display='flex';
+      $('#cancel-order').addEventListener('click',()=>modal.style.display='none');
+      $('#place-order').addEventListener('click', ()=>{
+        const name = $('#c-name').value.trim(); const phone = $('#c-phone').value.trim();
+        if(name.length<2){ alert('Please enter your name'); return; }
+        if(!/^\d{10}$/.test(phone)){ alert('Enter a valid 10-digit phone'); return; }
+        // simulate order
+        const order = {id: 'ORD'+Date.now(), name, phone, total: cartSubtotal(), items: {...cart}, createdAt: new Date().toISOString()};
+        // in a real app: POST /orders with auth
+        modal.style.display='none';
+        emptyCart();
+        showConfirmation(order);
+      });
+    }
+
+    function showConfirmation(order){
+      const modal = $('#modal'); const body = $('#modal-body');
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <h2>Order Confirmed</h2>
+          <div class="muted">Thanks ${order.name}! Your order <strong>${order.id}</strong> has been placed.</div>
+          <div>Amount: <strong>₹${order.total}</strong></div>
+          <div class="muted">We will contact you at ${order.phone}.</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn" id="close-conf">Close</button>
+          </div>
+        </div>
+      `;
+      modal.style.display='flex';
+      $('#close-conf').addEventListener('click',()=>modal.style.display='none');
+    }
+
+    /******************* Init *******************/
+    renderCategories(); renderProducts(); renderCart();
+
+    // Accessibility: close modal on backdrop click
+    $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') e.target.style.display='none' });
+
+    // small note: if you want to reset localStorage during development, uncomment below:
+    // localStorage.removeItem(STORAGE_KEY);
+
+    /******************* Backend integration hints (comments) *******************/
+    /*
+      Optional next-steps (backend):
+      - Create Express routes: GET /products, POST /orders, POST /auth/login
+      - Store products & orders in MongoDB
+      - Use JWT tokens for login and attach to Authorization header
+      - On checkout, POST the order to /orders and clear cart on success
+    */
+  </script>
+</body>
+</html>
